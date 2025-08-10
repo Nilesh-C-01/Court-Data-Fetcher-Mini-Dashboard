@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DEBUG=False
+      - DATABASE_PATH=/app/data/court_data.db
+      - SECRET_KEY=production-secret-key-change-this
+      - SELENIUM_TIMEOUT=30
+      - MAX_RETRIES=3
+      - REQUEST_DELAY=2
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./downloads:/app/downloads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a database service if you want to use PostgreSQL
+  # postgres:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: court_data
+  #     POSTGRES_USER: court_user
+  #     POSTGRES_PASSWORD: secure_password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+volumes:
+  postgres_data:

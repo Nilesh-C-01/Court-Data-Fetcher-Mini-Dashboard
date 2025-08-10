@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Case Details - {{ case.case_number }}/{{ case.filing_year }}{% endblock %}
+
+{% block content %}
+<!-- Case Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">
+            <i class="fas fa-file-alt me-2 text-primary"></i>
+            Case Details
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ case.case_number }}/{{ case.filing_year }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <span class="badge bg-{{ 'success' if case.status == 'success' else 'danger' if case.status == 'failed' else 'warning' }} fs-6">
+            {{ case.status.title() }}
+        </span>
+    </div>
+</div>
+
+{% if case.status == 'failed' %}
+<!-- Error Message -->
+<div class="alert alert-danger">
+    <h5><i class="fas fa-exclamation-triangle me-2"></i>Search Failed</h5>
+    <p class="mb-0">
+        The case information could not be retrieved. This could be due to:
+    </p>
+    <ul class="mt-2 mb-0">
+        <li>Invalid case number or filing year</li>
+        <li>Case not digitized or available online</li>
+        <li>Temporary website issues</li>
+        <li>Network connectivity problems</li>
+    </ul>
+</div>
+{% else %}
+
+<div class="row">
+    <!-- Case Information -->
+    <div class="col-lg-8">
+        <!-- Basic Case Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Case Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Case Type</label>
+                        <p class="mb-0">{{ case.case_type }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Case Number</label>
+                        <p class="mb-0">{{ case.case_number }}/{{ case.filing_year }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Filing Year</label>
+                        <p class="mb-0">{{ case.filing_year }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Search Date</label>
+                        <p class="mb-0">{{ case.search_timestamp.strftime('%d %B %Y, %I:%M %p') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Case Details -->
+        {% if case_detail %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Party Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-success">
+                            <i class="fas fa-user me-1"></i>Plaintiff/Petitioner
+                        </label>
+                        <p class="mb-0">{{ case_detail.parties_plaintiff or 'Not available' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-danger">
+                            <i class="fas fa-user me-1"></i>Defendant/Respondent
+                        </label>
+                        <p class="mb-0">{{ case_detail.parties_defendant or 'Not available' }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar-plus me-1"></i>Filing Date
+                        </label>
+                        <p class="mb-0">
+                            {% if case_detail.filing_date %}
+                                {{ case_detail.filing_date.strftime('%d %B %Y') }}
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar-check me-1"></i>Next Hearing
+                        </label>
+                        <p class="mb-0">
+                            {% if case_detail.next_hearing_date %}
+                                <span class="text-warning fw-bold">
+                                    {{ case_detail.next_hearing_date.strftime('%d %B %Y') }}
+                                </span>
+                            {% else %}
+                                Not scheduled
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-flag me-1"></i>Case Status
+                        </label>
+                        <p class="mb-0">
+                            <span class="badge bg-info">{{ case_detail.case_status or 'Status not available' }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Orders and Judgments -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-pdf me-2"></i>
+                    Orders & Judgments
+                    {% if orders %}
+                        <span class="badge bg-secondary ms-2">{{ orders|length }}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><i class="fas fa-calendar me-1"></i>Date</th>
+                                    <th><i class="fas fa-file-alt me-1"></i>Type</th>
+                                    <th><i class="fas fa-download me-1"></i>Download</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        {% if order.order_date %}
+                                            {{ order.order_date.strftime('%d %b %Y') }}
+                                        {% else %}
+                                            <span class="text-muted">Date not available</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-outline-primary">
+                                            {{ order.order_type or 'Document' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if order.pdf_url %}
+                                            <a href="{{ url_for('download_order', order_id=order.id) }}" 
+                                               class="btn btn-sm btn-outline-success"
+                                               target="_blank">
+                                                <i class="fas fa-download me-1"></i>
+                                                Download PDF
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">PDF not available</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No orders or judgments available.</p>
+                        <p class="text-muted small">Documents may not be digitized or publicly accessible.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>
+                    Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>
+                        New Search
+                    </a>
+                    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-history me-2"></i>
+                        Search History
+                    </a>
+                    <button class="btn btn-outline-info" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>
+                        Print Details
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Court Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-building me-2"></i>
+                    Court Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Court:</strong><br>
+                    Delhi High Court
+                </p>
+                <p class="mb-2">
+                    <strong>Address:</strong><br>
+                    High Court of Delhi<br>
+                    Sher Shah Road<br>
+                    New Delhi - 110503
+                </p>
+                <p class="mb-0">
+                    <strong>Website:</strong><br>
+                    <a href="https://delhihighcourt.nic.in" target="_blank" class="text-decoration-none">
+                        delhihighcourt.nic.in
+                        <i class="fas fa-external-link-alt ms-1 small"></i>
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- API Access -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-code me-2"></i>
+                    API Access
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">Access this case data via REST API:</p>
+                <div class="bg-light p-2 rounded">
+                    <code class="small">
+                        GET /api/case/{{ case.case_number }}
+                    </code>
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="copyApiUrl()">
+                    <i class="fas fa-copy me-1"></i>
+                    Copy API URL
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyApiUrl() {
+    const apiUrl = window.location.origin + '/api/case/{{ case.case_number }}';
+    navigator.clipboard.writeText(apiUrl).then(function() {
+        // Show success message
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+    });
+}
+
+// Print styles
+document.addEventListener('DOMContentLoaded', function() {
+    // Add print-specific styles
+    const printStyles = `
+        @media print {
+            .card {
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                margin-bottom: 1rem !important;
+            }
+            .btn, .navbar, .breadcrumb {
+                display: none !important;
+            }
+            .card-header {
+                background-color: #f8f9fa !important;
+                color: #000 !important;
+            }
+        }
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = printStyles;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

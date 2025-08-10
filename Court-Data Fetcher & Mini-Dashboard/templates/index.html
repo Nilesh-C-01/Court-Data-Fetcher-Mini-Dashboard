@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Court Data Fetcher{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Search Form -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>
+                    Search Case Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('search_case') }}" id="searchForm">
+                    <div class="mb-3">
+                        <label for="case_type" class="form-label">
+                            <i class="fas fa-list me-1"></i>Case Type
+                        </label>
+                        <select class="form-select" id="case_type" name="case_type" required>
+                            <option value="">Select Case Type</option>
+                            <option value="Civil Appeal">Civil Appeal</option>
+                            <option value="Criminal Appeal">Criminal Appeal</option>
+                            <option value="Civil Writ Petition">Civil Writ Petition</option>
+                            <option value="Criminal Writ Petition">Criminal Writ Petition</option>
+                            <option value="Company Appeal">Company Appeal</option>
+                            <option value="Tax Appeal">Tax Appeal</option>
+                            <option value="Service Matter">Service Matter</option>
+                            <option value="Arbitration Petition">Arbitration Petition</option>
+                            <option value="Contempt Petition">Contempt Petition</option>
+                            <option value="Execution Petition">Execution Petition</option>
+                            <option value="Regular Civil Suit">Regular Civil Suit</option>
+                            <option value="Summary Civil Suit">Summary Civil Suit</option>
+                            <option value="Miscellaneous Application">Miscellaneous Application</option>
+                            <option value="Criminal Revision">Criminal Revision</option>
+                            <option value="Criminal Misc.">Criminal Misc.</option>
+                            <option value="Bail Application">Bail Application</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="case_number" class="form-label">
+                            <i class="fas fa-hashtag me-1"></i>Case Number
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="case_number" 
+                               name="case_number" 
+                               placeholder="Enter case number (e.g., 1234)"
+                               pattern="[0-9]+"
+                               title="Enter numbers only"
+                               required>
+                        <div class="form-text">Enter only the case number without year or slashes</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="filing_year" class="form-label">
+                            <i class="fas fa-calendar me-1"></i>Filing Year
+                        </label>
+                        <select class="form-select" id="filing_year" name="filing_year" required>
+                            <option value="">Select Year</option>
+                            {% for year in range(2024, 1999, -1) %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            Search Case
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Quick Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h4 class="text-primary">{{ stats.total_searches or 0 }}</h4>
+                            <small class="text-muted">Total Searches</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h4 class="text-success">{{ stats.successful_searches or 0 }}</h4>
+                            <small class="text-muted">Successful</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h4 class="text-danger">{{ stats.failed_searches or 0 }}</h4>
+                            <small class="text-muted">Failed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Searches -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Searches
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_cases %}
+                    <div class="list-group list-group-flush">
+                        {% for case in recent_cases %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{{ url_for('case_detail', case_id=case.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ case.case_type }}
+                                        </a>
+                                    </h6>
+                                    <p class="mb-1 text-muted">
+                                        <i class="fas fa-hashtag me-1"></i>
+                                        {{ case.case_number }}/{{ case.filing_year }}
+                                    </p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ case.search_timestamp.strftime('%d %b %Y, %I:%M %p') }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if case.status == 'success' else 'danger' if case.status == 'failed' else 'warning' }}">
+                                    {{ case.status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('history') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list me-1"></i>
+                            View All History
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No recent searches found.</p>
+                        <p class="text-muted small">Start by searching for a case above.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Information Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <h6><i class="fas fa-building me-2 text-primary"></i>Court Information</h6>
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>Court:</strong> Delhi High Court</li>
+                            <li><strong>Website:</strong> delhihighcourt.nic.in</li>
+                            <li><strong>Data Source:</strong> Public Records</li>
+                        </ul>
+
+                        <h6><i class="fas fa-shield-alt me-2 text-success"></i>Privacy & Security</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="fas fa-check text-success me-1"></i> Only public data accessed</li>
+                            <li><i class="fas fa-check text-success me-1"></i> No personal data stored</li>
+                            <li><i class="fas fa-check text-success me-1"></i> Secure data transmission</li>
+                            <li><i class="fas fa-check text-success me-1"></i> Local database storage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('searchForm');
+    const caseNumberInput = document.getElementById('case_number');
+    
+    // Real-time validation for case number
+    caseNumberInput.addEventListener('input', function(e) {
+        const value = e.target.value;
+        const isValid = /^[0-9]*$/.test(value);
+        
+        if (!isValid && value !== '') {
+            e.target.classList.add('is-invalid');
+        } else {
+            e.target.classList.remove('is-invalid');
+        }
+    });
+    
+    // Form submission handling
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Searching...';
+        submitBtn.disabled = true;
+        
+        // Re-enable button after 30 seconds (timeout)
+        setTimeout(function() {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 30000);
+    });
+});
+</script>
+{% endblock %}
