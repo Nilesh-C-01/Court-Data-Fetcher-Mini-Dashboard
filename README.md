@@ -221,3 +221,5 @@ Check your internet connection
 [ ] Mobile-responsive design improvements
 
 [ ] API authentication and rate limiting
+
+P.S. - I have tried to seamlessly integrate and make the web app smooth,responsive with stand alone website design. The only thing that hurts my soul is that even after trying for one week, sometimes during captcha reading it fails to solve the captcha (yes I'm admitting ii openly) but rest assured it's super fast, responsive and super easy to use, intuitive tool.
